@@ -9,6 +9,7 @@ package javafuzz;
 import gnu.getopt.Getopt;
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -41,7 +42,7 @@ public class javaFuzz {
     //Recursion 
     public static  int   Recursion  =20;// Default
     //Array Size
-    public static  int   ArraySize  =100000;// Default
+    public static  int   ArraySize  =800;// Default
     //String size
      public static  int   StringSize  =1024;// Default
     public static String Start="";
@@ -203,41 +204,50 @@ String ff="",ee="",cc="",ss="";
     byte bmin = -128;
     byte bmax = 127;
     byte[] ab= new byte[ArraySize];//{bmax,bmin};
+    //Multi-dimensional arrays -- monkey business at the moment will do it more genericly soon
+    byte[][] abb= new byte[ArraySize][ArraySize];//{bmax,bmin};
     //Limits : short -32,768 and a maximum value of 32,767
     short smin = Short.MIN_VALUE;;
     short smax = Short.MAX_VALUE;;
     short[] as= new short[ArraySize];//{smax,smin};
+    short[][] ass= new short[ArraySize][ArraySize];//{smax,smin};
     //Limits : int minimum value of -2,147,483,648 and a maximum value of 2,147,483,647 
     int imin = Integer.MIN_VALUE;;
     int imax = Integer.MAX_VALUE;;
     int[] ai= new int[ArraySize];//{imax,imin};
+    int[][] aii= new int[ArraySize][ArraySize];//{imax,imin};
     //Limits : long minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807
     long lmin= Long.MIN_VALUE;;
     long lmax= Long.MAX_VALUE;;
     long[] al= new long[ArraySize];//{lmax,lmin};
+    long[][] all= new long[ArraySize][ArraySize];
     //Limits : float  single-precision 32-bit IEEE 754 floating point
     float fmin=Float.MIN_VALUE;;
     float fmax=Float.MIN_VALUE;;
     float[] af= new float[ArraySize];//{fmax,fmin};
+    float[][] aff= new float[ArraySize][ArraySize];//{fmax,fmin};
     //Limits : double double-precision 64-bit IEEE 754 floating point
     double dmin=Double.MIN_VALUE;;
     double dmax=Double.MAX_VALUE;;
     double[] ad= new double[ArraySize];//{dmax,dmin};
+    double[][] add= new double[ArraySize][ArraySize];//{dmax,dmin};
     //Limits : boolean true/false - this one doesnt make much sense but anyways
     boolean bomin=false;
     boolean bomax=true;
     boolean[] abo= new boolean[ArraySize];//{bomax,bomin};
+    boolean[][] aboo= new boolean[ArraySize][ArraySize];//{bomax,bomin};
     //Limits : char '\u0000' to '\uffff' 
     char cmin='\u0000';
     char cmax='\uffff';
     char[] ac= new char[ArraySize];//{cmax,cmin};
+    char[][] acc= new char[ArraySize][ArraySize];//{cmax,cmin};
     //Limits : string 
     String stmin ="1";
     //Strinh SIZE
     String stmax = BigString("1",StringSize);
     stmax = Start+stmax;
     String[] ast = new String[ArraySize];//{stmin,stmax};
-    
+    String[][] astt = new String[ArraySize][ArraySize];//{stmin,stmax};
     
     
     for (int k=0;k<cls.length;k++){
@@ -250,41 +260,49 @@ String ff="",ee="",cc="",ss="";
         else {list[k]=imin-(ExceedInt);}
     }
     else if (current.equals("[I")){list[k]=ai;}
+    else if (current.equals("[[I")){list[k]=aii;}
     else if (current.equals("char")){
         if(max){list[k]=cmax;}
         else {list[k]=cmin;}
    }
     else if (current.equals("[C")){list[k]=ac;}
+    else if (current.equals("[[C")){list[k]=acc;}
     else if (current.equals("float")){
         if(max){list[k]=fmax+ExceedFloat;}
         else {list[k]=fmin-(ExceedFloat);}
    }
     else if (current.equals("[F")){list[k]=af;}
+    else if (current.equals("[[F")){list[k]=aff;}
     else if (current.equals("short")){
         if(max){list[k]=smax+ExceedShort;}
         else {list[k]=smin-(ExceedShort);}
    }
     else if (current.equals("[S")){list[k]=as;}
+    else if (current.equals("[[S")){list[k]=ass;}
     else if (current.equals("boolean")){
         if(max){list[k]=bomax;}
         else {list[k]=bomin;}
    }
     else if (current.equals("[Z")){list[k]=abo;}
+    else if (current.equals("[[Z")){list[k]=aboo;}
     else if (current.equals("double")){
         if(max){list[k]=dmax+ExceedDouble;}
         else {list[k]=dmin-(ExceedDouble);}
    }
     else if (current.equals("[D")){list[k]=ad;}
+    else if (current.equals("[[D")){list[k]=add;}
     else if (current.equals("long")){
         if(max){list[k]=lmax+ExceedLong;}
         else {list[k]=lmin-(ExceedLong);}
    }
     else if (current.equals("[J")){list[k]=al;}
+    else if (current.equals("[[J")){list[k]=all;}
     else if (current.equals("byte")){
         if(max){list[k]=bmax;}
         else {list[k]=bmin;}
    }
     else if (current.equals("[B")){list[k]=ab;}
+    else if (current.equals("[[B")){list[k]=abb;}
     else if (current.equals("java.lang.String")){
         if(max)
         {
@@ -294,6 +312,7 @@ String ff="",ee="",cc="",ss="";
         else {list[k]=stmin;}
    }
     else if (current.equals("[Ljava/lang/String")){list[k]=ast;}
+    else if (current.equals("[[Ljava/lang/String")){list[k]=astt;}
     else {
         //Exception from within - verbose=0/1
         int v=1;
@@ -344,6 +363,7 @@ String ff="",ee="",cc="",ss="";
     for (int a=0;a<size;a++){tmp=tmp+str;}
    return tmp; }
    
+    
 static void recursiveAttack(String FileName,int v) throws Exception {
     
      
@@ -368,7 +388,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    Values can be : int or double or float or long or short"+
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
                                 "\n"+"    If needs more it will set type to null and consider it Infinite"+
-                                "\n"+"-a: Set size of used array when fuzzing  [Default 100000]"+
+                                "\n"+"-a: Set size of used array when fuzzing  [Default 800]"+
                                 "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
