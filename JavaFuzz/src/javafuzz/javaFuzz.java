@@ -296,10 +296,15 @@ String ff="",ee="",cc="",ss="";
     char[] ac= new char[ArraySize];//{cmax,cmin};
     char[][] acc= new char[ArraySize][ArraySize];//{cmax,cmin};
     //Limits : string 
+    //String SIZE
     String stmin ="1";
-    //Strinh SIZE
-    String stmax = BigString("1",StringSize);
-    stmax = Start+stmax;
+    String stmax="";
+    if (Start.equals("")){
+    stmax = BigString("1",StringSize);
+    stmax = Start+stmax;}
+    else{stmax=Start;stmin=Start;}
+    
+    
     String[] ast = new String[ArraySize];//{stmin,stmax};
     String[][] astt = new String[ArraySize][ArraySize];//{stmin,stmax};
     
@@ -438,7 +443,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"-m: Fuzz methods of a Class, Can take Long time to finish"+
                                 "\n"+"-f: Read Class names from a file"+
                                 "\n"+"-c: Input is Class name, you cannot use -f at the same time"+
-                                "\n"+"-s: You can set the start of the fuzzing String, for example http://"+
+                                "\n"+"-s: You can set the fuzzing String, for example http://www.example.com"+
                                 "\n"+"-e: You can set the type you want to overflow with the MAX_VALUE on top "+
                                 "\n"+"    Values can be : int or double or float or long or short"+
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
@@ -449,7 +454,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
                                 "\n"+"java -jar JavaFuzz.jar -f classes.txt -v -e int"+
-                                "\n"+"java -jar JavaFuzz.jar -c java.net.URL -e int -s http://";
+                                "\n"+"java -jar JavaFuzz.jar -c java.net.URL -e int -s http://www.example.com";
                System.out.println(output);
 
     }
