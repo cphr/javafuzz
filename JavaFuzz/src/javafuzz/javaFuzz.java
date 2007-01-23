@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class javaFuzz {
     
     /**
      * @param args the command line arguments
-     */
+     */ 
     public static int Exceed =0;
     //Global Overflowing Data
     public static  int    ExceedInt   =0;// Integer.MAX_VALUE;
@@ -44,12 +45,15 @@ public class javaFuzz {
     //Array Size
     public static  int   ArraySize  =800;// Default
     //String size
-     public static  int   StringSize  =1024;// Default
+    public static  int   StringSize  =1024;// Default
+    //String starting text
     public static String Start="";
+    //Methods Attack
+    public static int attackMethods =0;
 
 public static void main(String[] args) {
         String[] argv= args;
-        Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:l:");
+        Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:l:m");
 int c;
 String arg;
 int vv=0,rr=0;
@@ -62,6 +66,10 @@ String ff="",ee="",cc="",ss="";
           case 'v':
              //Verbose
             vv=1;
+            break;
+           case 'm':
+             //Methods Attack Flag
+            attackMethods=1;
             break;
           case 'f':
             //Classes File
@@ -142,7 +150,7 @@ String ff="",ee="",cc="",ss="";
     throws Exception
   { 
         Exceed=1;
-   Class cls = Class.forName(className);
+    Class cls = Class.forName(className);
     Constructor[] a = cls.getConstructors();
     Object[] args ;
      System.out.println("--------------------------------------");
@@ -155,11 +163,14 @@ String ff="",ee="",cc="",ss="";
        System.out.print(" )\n");
        System.out.println("Invoke -> \t"+className);
        Constructor cons = cls.getConstructor(types);
+       
        //High Values
        args =  slapObject(ff,1,Exceed) ;
        System.out.print("[MAX] Status -> \t");
        try {
-       if (args.length>0){cons.newInstance(args);}
+       if (args.length>0){cons.newInstance(args);
+       
+       }
        else {cons.newInstance();}
        System.out.print("[MAX] No Problem\n");
        }
@@ -179,16 +190,59 @@ String ff="",ee="",cc="",ss="";
        if (v==1){    System.out.print("Exception("+e.getCause() +")\n");}
        else {System.out.print("Exception\n");}
        }
+       //Method Attack
+       
+       if (attackMethods==1){
+           //Hi Values
+       methodSlap(a[f],cls,args,1,v);
+       //Low Values
+       methodSlap(a[f],cls,args,0,v);
+       }
      
        System.out.println("--------------------------------------");
        
       
    }
-       
-   
- 
      
-  }  
+  }
+  //Expand Methods and throw Slaped Objects in
+  public static void  methodSlap(Constructor cs,Class cls,Object[] args,int hilo,int v) throws Exception {
+  Method[] allMethods = cls.getDeclaredMethods();
+  String hilow;
+  if (hilo==1){hilow="[MAX]";}
+  else {hilow="[MIN]";}
+  System.out.println("~~ Methods Fuzzing ~~");
+  
+  for (int a=0;a<allMethods.length;a++)
+  {             Class[] cc = allMethods[a].getParameterTypes();
+                Object[] MethodArgs =  slapObject(cc,hilo,Exceed) ;
+                System.out.print("\nMethod -> \t"+allMethods[a].getName()+"\nTypes -> \t(");
+                for (int k=0;k<cc.length;k++){System.out.print(" "+cc[k].getName());}
+                System.out.print(" )\n");
+            try {
+            
+                if  (MethodArgs.length>0){
+                    if (args.length>0)   {allMethods[a].invoke(cs.newInstance(args), MethodArgs);}
+                     else {allMethods[a].invoke(cs.newInstance(), MethodArgs);}
+                }
+                else {
+                if (args.length>0)   { allMethods[a].invoke(cs.newInstance(args));}
+                else {allMethods[a].invoke(cs.newInstance());}
+                }
+                System.out.println(hilow+" Status ->\tNo Problem");
+            } catch (Exception ex) {
+                if (v==1){    System.out.print(hilow+" Status ->\tException("+ex.getCause() +")\n");}
+                else {System.out.println(hilow+" Status ->\tException");}
+                
+            }
+
+  }
+  System.out.println("~~~~~~~~~~~~~~~~~~~~~");
+   
+   
+  }
+  
+  
   public static int  etternalLoop=0;
     public static Object[] slapObject (Class[] cls,int hilow,int E) throws Exception{
         etternalLoop++;;
@@ -327,7 +381,7 @@ String ff="",ee="",cc="",ss="";
         Class[] types =  ff ;
         Constructor cons = tmp.getConstructor(types);
          if (etternalLoop<Recursion){args =  slapObject(ff,0,E) ;}
-         else {System.out.println("****Class in Infinite Loop****"); args=null;}
+         else {System.out.println("\n****Infinite Loop detected (use -r)****"); args=null;}
             try {
              //   if (args.length==0){
                     list[k]=cons.newInstance(args);
@@ -381,6 +435,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                String output =
                                 "\n"+"FLAGS"+
                                 "\n"+"-v: Verbose - Fully Print Exceptions"+
+                                "\n"+"-m: Fuzz methods of a Class, Can take Long time to finish"+
                                 "\n"+"-f: Read Class names from a file"+
                                 "\n"+"-c: Input is Class name, you cannot use -f at the same time"+
                                 "\n"+"-s: You can set the start of the fuzzing String, for example http://"+
@@ -388,7 +443,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    Values can be : int or double or float or long or short"+
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
                                 "\n"+"    If needs more it will set type to null and consider it Infinite"+
-                                "\n"+"-a: Set size of used array when fuzzing  [Default 800]"+
+                                "\n"+"-a: Set size of used array when fuzzing  [Default 800]" +
                                 "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
