@@ -25,14 +25,13 @@ import java.io.*;
 public class javaFuzz {
     
     /** Creates a new instance of javaFuzz */
-    public javaFuzz()  {
-       
-            
-    }
+    public javaFuzz()  {}
     
     /**
      * @param args the command line arguments
      */ 
+    
+    //Static Values Init 
     public static int Exceed =0;
     //Global Overflowing Data
     public static  int    ExceedInt   =0;// Integer.MAX_VALUE;
@@ -40,8 +39,20 @@ public class javaFuzz {
     public static  float  ExceedFloat =0;// Float.MAX_VALUE;
     public static  short  ExceedShort =0;// Short.MAX_VALUE;
     public static  long   ExceedLong  =0;// Short.MAX_VALUE;
+    //Set Values
+    static public  short smin = Short.MIN_VALUE;;
+    static public  short smax = Short.MAX_VALUE;;
+    static public  int   imin = Integer.MIN_VALUE;;
+    static public  int   imax = Integer.MAX_VALUE;;
+    static public  long  lmin = Long.MIN_VALUE;;
+    static public  long  lmax = Long.MAX_VALUE;;
+    static public  float fmin = Float.MIN_VALUE;;
+    static public  float fmax = Float.MIN_VALUE;;
+    static public  double dmin=Double.MIN_VALUE;;
+    static public  double dmax=Double.MAX_VALUE;;
+    public static int  etternalLoop=0;
     //Recursion 
-    public static  int   Recursion  =20;// Default
+    public static  int   Recursion  =23;// Default
     //Array Size
     public static  int   ArraySize  =800;// Default
     //String size
@@ -50,15 +61,22 @@ public class javaFuzz {
     public static String Start="";
     //Methods Attack
     public static int attackMethods =0;
+    //Enumerate Constant's position
+    public static int oo=0;
+    //Create Helper class
+    public static Helper  help = new Helper();
 
+    
+        
 public static void main(String[] args) {
-        String[] argv= args;
-        Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:l:m");
+String[] argv= args;
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:k:l:mo");
 int c;
 String arg;
 int vv=0,rr=0;
 String ff="",ee="",cc="",ss="";
 
+//Command Line Arguments
  while ((c = g.getopt()) != -1)
    {
      switch(c)
@@ -66,6 +84,10 @@ String ff="",ee="",cc="",ss="";
           case 'v':
              //Verbose
             vv=1;
+            break;
+          case 'o':
+             //Verbose
+            oo=1;
             break;
            case 'm':
              //Methods Attack Flag
@@ -76,6 +98,36 @@ String ff="",ee="",cc="",ss="";
             arg = g.getOptarg();
             ff=arg;
             break;
+          case 'k':
+            //Set Value 
+            arg = g.getOptarg();
+            String[] values = arg.split("=");
+            if (values.length!=2 ){usage();System.exit(0);}
+            else {
+            if (values[0].equals("int")){ 
+            imax =  Integer.parseInt(values[1]);
+            imin = -Integer.parseInt(values[1]);
+            }
+            else if (values[0].equals("float")){ 
+            fmax =  Float.parseFloat(values[1]);
+            fmin = -Float.parseFloat(values[1]);
+            }
+            else if (values[0].equals("double")){ 
+            dmax =  Double.parseDouble(values[1]);
+            dmin = -Double.parseDouble(values[1]);
+            }
+            else if (values[0].equals("short")){ 
+            smax =  Short.parseShort(values[1]);
+            }
+            else if (values[0].equals("long")){ 
+            lmax =  Long.parseLong(values[1]);
+            lmin = -Long.parseLong(values[1]);
+            }
+            else {usage();System.exit(0);}
+            }
+            
+            break;
+
           case 'c':
             //Class
             arg = g.getOptarg();
@@ -146,15 +198,21 @@ String ff="",ee="",cc="",ss="";
         
     }
    
+  public static Object Constant =null;
+  public static int enumerateConstant =1;
   public static void summarize(String className, int v)
-    throws Exception
-  { 
-        Exceed=1;
+
+  { try{
+    Exceed=1;
     Class cls = Class.forName(className);
+    Constant = help.returnConsant(cls);
+    if (help.returnConsant(cls)!=null) 
+    {System.out.println("\nNOTE: This class takes Constant values. Try -o flag\n");}
+ 
     Constructor[] a = cls.getConstructors();
     Object[] args ;
-     System.out.println("--------------------------------------");
-   for (int f=0;f<a.length;f++){
+    System.out.println("--------------------------------------");  
+    for (int f=0;f<a.length;f++){
        Class[] ff =  a[f].getParameterTypes();
        Class[] types =  ff ;
        System.out.print("Constructor -> \t"+a[f].getName()+"\nTypes -> \t(");
@@ -164,38 +222,26 @@ String ff="",ee="",cc="",ss="";
        System.out.println("Invoke -> \t"+className);
        Constructor cons = cls.getConstructor(types);
        
-       //High Values
+       //High Values - No Methods
+       etternalLoop=0;
        args =  slapObject(ff,1,Exceed) ;
-       System.out.print("[MAX] Status -> \t");
-       try {
-       if (args.length>0){cons.newInstance(args);
-       
-       }
-       else {cons.newInstance();}
-       System.out.print("[MAX] No Problem\n");
-       }
-       catch(Exception e){
-       if (v==1){    System.out.print("Exception("+e.getCause() +")\n");}
-       else {System.out.print("Exception\n");}
-       }
-       //Low Values
+       System.out.print("\n[MAX] Status -> \t");
+	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
+       System.out.print("\n");
+	   
+       //Low Values - No Methods
        args =  slapObject(ff,0,Exceed) ;
        System.out.print("[MIN] Status -> \t");
-       try {
-       if (args.length>0){cons.newInstance(args);}
-       else {cons.newInstance();}
-       System.out.print("[MIN] No Problem\n");
-       }
-       catch(Exception e){
-       if (v==1){    System.out.print("Exception("+e.getCause() +")\n");}
-       else {System.out.print("Exception\n");}
-       }
-       //Method Attack
+	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
+       System.out.print("\n");	
        
+       //Method Attack
        if (attackMethods==1){
-           //Hi Values
-       methodSlap(a[f],cls,args,1,v);
+       //Hi Values
+       args =  slapObject(ff,1,Exceed) ;
+	   methodSlap(a[f],cls,args,1,v);
        //Low Values
+       args =  slapObject(ff,0,Exceed) ;
        methodSlap(a[f],cls,args,0,v);
        }
      
@@ -203,86 +249,82 @@ String ff="",ee="",cc="",ss="";
        
       
    }
-     
+    } catch(Exception e){}
   }
+  
+  public static void DoIt (Constructor cons, Object[] args, int v){
+       try {
+	   cons.newInstance(args);
+       System.out.print(" No Problem\n");
+       }
+       catch(Exception e){
+       if (v==1){ System.out.print("Exception("+e.getCause() +")\n");}
+       else {System.out.print("Exception\n");}
+       }
+   }
+    public static void DoIt (Constructor cons, int v){
+       try {
+	   cons.newInstance();
+       System.out.print(" No Problem\n");
+       }
+       catch(Exception e){
+       if (v==1){ System.out.print("Exception("+e.getCause() +")\n");}
+       else {System.out.print("Exception\n");}
+       }
+   }
+   
+        
+  
+  
   //Expand Methods and throw Slaped Objects in
-  public static void  methodSlap(Constructor cs,Class cls,Object[] args,int hilo,int v) throws Exception {
+  public static void  methodSlap(Constructor cs,Class cls,Object[] args,int hilo,int v)  {
+  try {
   Method[] allMethods = cls.getDeclaredMethods();
   String hilow;
-  if (hilo==1){hilow="[MAX]";}
-  else {hilow="[MIN]";}
-  System.out.println("~~ Methods Fuzzing ~~");
+  System.out.println("\n~~ Methods Fuzzing ~~");
+  Object tmpCLS = help.returnConsant(cls);
   
   for (int a=0;a<allMethods.length;a++)
   {             Class[] cc = allMethods[a].getParameterTypes();
+                etternalLoop=0;
                 Object[] MethodArgs =  slapObject(cc,hilo,Exceed) ;
-                System.out.print("\nMethod -> \t"+allMethods[a].getName()+"\nTypes -> \t(");
+                System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]\nTypes -> \t(");
                 for (int k=0;k<cc.length;k++){System.out.print(" "+cc[k].getName());}
                 System.out.print(" )\n");
-            try {
-            
-                if  (MethodArgs.length>0){
-                    if (args.length>0)   {allMethods[a].invoke(cs.newInstance(args), MethodArgs);}
-                     else {allMethods[a].invoke(cs.newInstance(), MethodArgs);}
-                }
-                else {
-                if (args.length>0)   { allMethods[a].invoke(cs.newInstance(args));}
-                else {allMethods[a].invoke(cs.newInstance());}
-                }
-                System.out.println(hilow+" Status ->\tNo Problem");
-            } catch (Exception ex) {
-                if (v==1){    System.out.print(hilow+" Status ->\tException("+ex.getCause() +")\n");}
-                else {System.out.println(hilow+" Status ->\tException");}
-                
-            }
+                help.BeefConstructor(cs,args,allMethods[a],tmpCLS,MethodArgs,v,oo);
+  }
+  System.out.println("\n~~~~~~~~~~~~~~~~~~~~~");
+  }
+  catch(Exception e){}
+   
+  }
+  
+  
 
-  }
-  System.out.println("~~~~~~~~~~~~~~~~~~~~~");
-   
-   
-  }
-  
-  
-  public static int  etternalLoop=0;
-    public static Object[] slapObject (Class[] cls,int hilow,int E) throws Exception{
-        etternalLoop++;;
-      
-        
-        
+public static Object[] slapObject (Class[] cls,int hilow,int E) {
+    etternalLoop++;;        
     Object[] list = new Object[cls.length];
-    //int ArraySize = 100000;
-    //Exceed normal E=1 / Normal E=0
+     try{
     E=0;
-    //TYPES: byte,short,int,long,float,double,boolean,char,string
-    //Limits : byte -128 and a maximum value of 127 (inclusive)
     byte bmin = -128;
     byte bmax = 127;
     byte[] ab= new byte[ArraySize];//{bmax,bmin};
     //Multi-dimensional arrays -- monkey business at the moment will do it more genericly soon
     byte[][] abb= new byte[ArraySize][ArraySize];//{bmax,bmin};
     //Limits : short -32,768 and a maximum value of 32,767
-    short smin = Short.MIN_VALUE;;
-    short smax = Short.MAX_VALUE;;
     short[] as= new short[ArraySize];//{smax,smin};
     short[][] ass= new short[ArraySize][ArraySize];//{smax,smin};
     //Limits : int minimum value of -2,147,483,648 and a maximum value of 2,147,483,647 
-    int imin = Integer.MIN_VALUE;;
-    int imax = Integer.MAX_VALUE;;
     int[] ai= new int[ArraySize];//{imax,imin};
     int[][] aii= new int[ArraySize][ArraySize];//{imax,imin};
     //Limits : long minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807
-    long lmin= Long.MIN_VALUE;;
     long lmax= Long.MAX_VALUE;;
     long[] al= new long[ArraySize];//{lmax,lmin};
     long[][] all= new long[ArraySize][ArraySize];
     //Limits : float  single-precision 32-bit IEEE 754 floating point
-    float fmin=Float.MIN_VALUE;;
-    float fmax=Float.MIN_VALUE;;
     float[] af= new float[ArraySize];//{fmax,fmin};
     float[][] aff= new float[ArraySize][ArraySize];//{fmax,fmin};
     //Limits : double double-precision 64-bit IEEE 754 floating point
-    double dmin=Double.MIN_VALUE;;
-    double dmax=Double.MAX_VALUE;;
     double[] ad= new double[ArraySize];//{dmax,dmin};
     double[][] add= new double[ArraySize][ArraySize];//{dmax,dmin};
     //Limits : boolean true/false - this one doesnt make much sense but anyways
@@ -296,7 +338,6 @@ String ff="",ee="",cc="",ss="";
     char[] ac= new char[ArraySize];//{cmax,cmin};
     char[][] acc= new char[ArraySize][ArraySize];//{cmax,cmin};
     //Limits : string 
-    //String SIZE
     String stmin ="1";
     String stmax="";
     if (Start.equals("")){
@@ -304,14 +345,11 @@ String ff="",ee="",cc="",ss="";
     stmax = Start+stmax;}
     else{stmax=Start;stmin=Start;}
     
-    
     String[] ast = new String[ArraySize];//{stmin,stmax};
     String[][] astt = new String[ArraySize][ArraySize];//{stmin,stmax};
     
-    
     for (int k=0;k<cls.length;k++){
-    String current = cls[k].getName();
-     
+    String current = cls[k].getName();     
     boolean max=false;
     if(hilow==1){max=true;}
     if (current.equals("int")) {
@@ -365,63 +403,78 @@ String ff="",ee="",cc="",ss="";
     else if (current.equals("java.lang.String")){
         if(max)
         {
-            //Valid URL String list[k]="http://"+stmax+".com";
             list[k]=stmax;
         }
         else {list[k]=stmin;}
    }
     else if (current.equals("[Ljava/lang/String")){list[k]=ast;}
     else if (current.equals("[[Ljava/lang/String")){list[k]=astt;}
+    //Construct - Uknown Object
     else {
-        //Exception from within - verbose=0/1
-        int v=1;
-        try {
-        Class tmp = Class.forName(current);
-        
-        
-        Constructor[] a = tmp.getConstructors();
-        if (a.length >0){
-        Object[] args ;
-        Class[] ff =  a[0].getParameterTypes();
-        Class[] types =  ff ;
-        Constructor cons = tmp.getConstructor(types);
-         if (etternalLoop<Recursion){args =  slapObject(ff,0,E) ;}
-         else {System.out.println("\n****Infinite Loop detected (use -r)****"); args=null;}
-            try {
-             //   if (args.length==0){
-                    list[k]=cons.newInstance(args);
-                     
-                //}
-             //  else               {list[k]=null;}
-                }
-            catch(Exception e){ 
-                if (v==1){   /*e.printStackTrace();*/System.out.print("Exception("+e.getCause() +")\n");}
-                else {System.out.print("Exception\n");}
-                }
-       }
-        
-   }
-        
-        
-        catch(Exception e){ /*e.printStackTrace();*/;}
-   
-     
-    }
     
+	    try { 
+		    Class clsa = Class.forName(current);
+        	Object Constant1 = help.returnConsant(clsa);
+	        Constructor[] a = clsa.getConstructors();
+        	Object[] args ;
+            int check=0;
+        	for (int f=0;f<a.length;f++)   {
+	        Class[] ff =  a[f].getParameterTypes();
+            Constructor cons = clsa.getConstructor(ff);
+             if   (etternalLoop<Recursion){args =  slapObject(ff,1,0) ;}
+             else {System.out.println("\n****Infinite Loop detected (use -r)****"); args=null;}
 
-   
+             		if (args.length>0){
+                          for(int h=0;h<args.length;h++){ 
+                          Object[] tmpr = new Object[args.length];
+                          for (int p=0;p<args.length;p++) {tmpr[p]=args[p];}
+                                //Show Submitted Values
+                                System.out.print("\nSubmit Values - Sub-constructor ("+clsa.getName()+"):\n\t ");
+                                for (int display=0;display<args.length;display++)
+                                {System.out.print(tmpr[display]+" ");}                    
+                                try   {list[k]=cons.newInstance(tmpr);System.out.print(":No Problem\n");check=1;break;}
+                                catch (Exception e){System.out.print(""+e.getCause());
+                                try   {list[k]=cons.newInstance(args);System.out.print(":No Problem\n");check=1;break;}
+                                catch (Exception ea){} 
+                                }                    						   
+                              }
+						}
+			
+					else { try    {list[k]=cons.newInstance();check=1;break;} catch  (Exception e){list[k]=null;break;} }       	
+        	    
+				if (check==1) {break;}
+   				}
+   				
+   				if (check!=1) {list[k]=null;}
+		    
+		     }
+    	catch (Exception e){System.out.println("hat?"+e);}
+    	
+    	
+    	}//Major ELSE
+    
     }
     
+    return list;}
+    
+    
+    
+    
+    
+    catch(Exception e){/*Not able to construct types*/ }
+    return list;
+    }
 
-     return list;
     
-    }
-    
-    static String BigString (String str,int size){
-    String tmp="";
-    for (int a=0;a<size;a++){tmp=tmp+str;}
-   return tmp; }
+        
+static String BigString (String str,int size){
+String tmp="";
+for (int a=0;a<size;a++){tmp=tmp+str;}
+return tmp; }
    
+   
+   
+
     
 static void recursiveAttack(String FileName,int v) throws Exception {
     
@@ -448,8 +501,12 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    Values can be : int or double or float or long or short"+
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
                                 "\n"+"    If needs more it will set type to null and consider it Infinite"+
+                                "\n"+"-k: Set the value for int,float,long,short,double"+
+                                "\n"+"    e.g. -k int=100  or -k double=20000 and so on"+                               
                                 "\n"+"-a: Set size of used array when fuzzing  [Default 800]" +
                                 "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
+                                "\n"+"-o: Enumerate possible constructor's Constant parameters"+
+                                "\n"+"    Bruteforce's all possible positions for the constant (extra delay)"+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
@@ -463,4 +520,3 @@ static void recursiveAttack(String FileName,int v) throws Exception {
    
  
 }
-
