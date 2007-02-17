@@ -65,12 +65,14 @@ public class javaFuzz {
     public static int oo=0;
     //Create Helper class
     public static Helper  help = new Helper();
+    //MAX or MIN Values
+    public static String limit="";
 
     
         
 public static void main(String[] args) {
 String[] argv= args;
-Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:k:l:mo");
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:k:l:mou:");
 int c;
 String arg;
 int vv=0,rr=0;
@@ -153,6 +155,11 @@ String ff="",ee="",cc="",ss="";
             arg = g.getOptarg();
             try {StringSize= Integer.parseInt(arg);} catch (Exception e){usage();System.exit(0);}
             break;
+          case 'u':
+            //String Size
+            arg = g.getOptarg();
+            try {limit= arg;} catch (Exception e){usage();System.exit(0);}
+            break;
           case 's':
            //String
             arg = g.getOptarg();
@@ -224,25 +231,31 @@ String ff="",ee="",cc="",ss="";
        
        //High Values - No Methods
        etternalLoop=0;
+       if (limit.equals("high") | limit.equals("") ){
        args =  slapObject(ff,1,Exceed) ;
        System.out.print("\n[MAX] Status -> \t");
 	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
        System.out.print("\n");
-	   
+       }   
        //Low Values - No Methods
+       if (limit.equals("low") | limit.equals("") ){
        args =  slapObject(ff,0,Exceed) ;
        System.out.print("[MIN] Status -> \t");
 	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
        System.out.print("\n");	
-       
+       }
        //Method Attack
        if (attackMethods==1){
        //Hi Values
+       if (limit.equals("high") | limit.equals("") ){    
        args =  slapObject(ff,1,Exceed) ;
 	   methodSlap(a[f],cls,args,1,v);
+       }
        //Low Values
+       if (limit.equals("low") | limit.equals("") ){
        args =  slapObject(ff,0,Exceed) ;
        methodSlap(a[f],cls,args,0,v);
+       }
        }
      
        System.out.println("--------------------------------------");
@@ -507,6 +520,8 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
                                 "\n"+"-o: Enumerate possible constructor's Constant parameters"+
                                 "\n"+"    Bruteforce's all possible positions for the constant (extra delay)"+
+                                "\n"+"-u: Fuzz only high or low values respectively e.g. Integer high is +MAX_VALUE"+
+                                "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
