@@ -67,16 +67,17 @@ public class javaFuzz {
     public static Helper  help = new Helper();
     //MAX or MIN Values
     public static String limit="";
-
+ 	//IgnoreMethod 
+    public static String[] im;
     
         
 public static void main(String[] args) {
 String[] argv= args;
-Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:s:r:a:k:l:mou:");
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:s:r:a:k:l:mou:");
 int c;
 String arg;
 int vv=0,rr=0;
-String ff="",ee="",cc="",ss="";
+String ff="",ee="",cc="",ss="",ii="";
 
 //Command Line Arguments
  while ((c = g.getopt()) != -1)
@@ -103,7 +104,12 @@ String ff="",ee="",cc="",ss="";
           case 'k':
             //Set Value 
             arg = g.getOptarg();
-            String[] values = arg.split("=");
+            String[] getManyTypes = arg.split(",");
+			
+			for (int findAllTypes=0;findAllTypes<getManyTypes.length;findAllTypes++)
+			{
+
+			String[] values = getManyTypes[findAllTypes].split("=");
             if (values.length!=2 ){usage();System.exit(0);}
             else {
             if (values[0].equals("int")){ 
@@ -126,8 +132,10 @@ String ff="",ee="",cc="",ss="";
             lmin = -Long.parseLong(values[1]);
             }
             else {usage();System.exit(0);}
+
             }
-            
+ 			
+			}
             break;
 
           case 'c':
@@ -135,6 +143,20 @@ String ff="",ee="",cc="",ss="";
             arg = g.getOptarg();
             cc=arg;
             break;
+		  case 'i':
+			//Ignore methods 
+			arg =  g.getOptarg();
+			String[] ignoremany = arg.split(",");
+			
+			if (ignoremany.length==1) {
+				im = new String[1];
+				im[0] = arg;
+				}
+			else { 
+				im = new String[ignoremany.length];
+				im=ignoremany;
+				}
+			break;
           case 'e':
             //Extend
             arg = g.getOptarg();
@@ -200,7 +222,7 @@ String ff="",ee="",cc="",ss="";
                   System.out.println("+Classes File ERROR");
                 }}
        }
-        
+        System.exit(1);
        
         
     }
@@ -298,13 +320,32 @@ String ff="",ee="",cc="",ss="";
   Object tmpCLS = help.returnConsant(cls);
   
   for (int a=0;a<allMethods.length;a++)
-  {             Class[] cc = allMethods[a].getParameterTypes();
+  {             
+				Class[] cc = allMethods[a].getParameterTypes();
                 etternalLoop=0;
                 Object[] MethodArgs =  slapObject(cc,hilo,Exceed) ;
-                System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]\nTypes -> \t(");
+				
+				int Justincase =0;
+				try {
+
+				for	(int checkIgnore=0;checkIgnore<im.length;checkIgnore++)
+				{
+					if (allMethods[a].getName().equals(im[checkIgnore])) {Justincase=1;} 
+				} 
+				}
+				catch(Exception e){}
+				
+				if (Justincase==1){ 
+				System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]: -=IGNORED=-\n");
+				}
+				
+				else {
+				System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]\nTypes -> \t(");
                 for (int k=0;k<cc.length;k++){System.out.print(" "+cc[k].getName());}
                 System.out.print(" )\n");
                 help.BeefConstructor(cs,args,allMethods[a],tmpCLS,MethodArgs,v,oo);
+				}
+			
   }
   System.out.println("\n~~~~~~~~~~~~~~~~~~~~~");
   }
@@ -502,7 +543,9 @@ static void recursiveAttack(String FileName,int v) throws Exception {
 }
 
     private static void usage() {
-                System.out.println("\nJavaFuzzer - Classes Fuzzing (Reflection Based)\n");
+				System.out.println("\n= =============================================== =");	
+                System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
+				System.out.println("= =============================================== =\n");
                String output =
                                 "\n"+"FLAGS"+
                                 "\n"+"-v: Verbose - Fully Print Exceptions"+
@@ -515,12 +558,15 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
                                 "\n"+"    If needs more it will set type to null and consider it Infinite"+
                                 "\n"+"-k: Set the value for int,float,long,short,double"+
-                                "\n"+"    e.g. -k int=100  or -k double=20000 and so on"+                               
+                                "\n"+"    e.g. -k int=100  or -k double=20000 or -k int=19,float=49 and so on."+                               
                                 "\n"+"-a: Set size of used array when fuzzing  [Default 800]" +
                                 "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
                                 "\n"+"-o: Enumerate possible constructor's Constant parameters"+
                                 "\n"+"    Bruteforce's all possible positions for the constant (extra delay)"+
-                                "\n"+"-u: Fuzz only high or low values respectively e.g. Integer high is +MAX_VALUE"+
+                                "\n"+"-i: JavaFuzz will ignore the specified method(s) helpful when you found a bug "+
+                                "\n"+"    in a method but you want to dig deeper. (Seperate methods with commas)"+
+                                "\n"+"    e.g. for java.awt.Image you could use -i getGraphics,getScaledInstance  "+                               
+                                "\n"+"-u: Fuzz only positive or negative values respectively e.g. Integer high is +MAX_VALUE"+
                                 "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
