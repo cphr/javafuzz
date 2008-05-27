@@ -18,10 +18,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.io.*;
 
-/**
- *
- * @author 
- */
+
 public class javaFuzz {
     
     /** Creates a new instance of javaFuzz */
@@ -67,13 +64,18 @@ public class javaFuzz {
     public static Helper  help = new Helper();
     //MAX or MIN Values
     public static String limit="";
- 	//IgnoreMethod 
+ 	//Filter Out - IgnoreMethod 
     public static String[] im;
-    
+	//Filter In - Fuzz only these methods
+    public static String[] nim;
+
+	//Check Filter-in and Filter-out
+	public static int checkFI=0;
+    public static int checkFO=0;
         
 public static void main(String[] args) {
 String[] argv= args;
-Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:s:r:a:k:l:mou:");
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:n:s:r:a:k:l:mou:");
 int c;
 String arg;
 int vv=0,rr=0;
@@ -156,6 +158,22 @@ String ff="",ee="",cc="",ss="",ii="";
 				im = new String[ignoremany.length];
 				im=ignoremany;
 				}
+			checkFO =1;
+			break;
+		  case 'n':
+			//Fuzz only these methods 
+			arg =  g.getOptarg();
+			String[] nignoremany = arg.split(",");
+
+			if (nignoremany.length==1) {
+				nim = new String[1];
+				nim[0] = arg;
+				}
+			else { 
+				nim = new String[nignoremany.length];
+				nim=nignoremany;
+				}
+			checkFI =1;
 			break;
           case 'e':
             //Extend
@@ -206,7 +224,7 @@ String ff="",ee="",cc="",ss="",ii="";
          else if(ee.equals("short"))    { ExceedShort  = Short.MAX_VALUE;  }
          else if(ee.equals("long"))     { ExceedLong   = Long.MAX_VALUE;   }
 
-       if ((!ff.equals("") && !cc.equals(""))||(ff.equals("") && cc.equals(""))){usage();}
+       if ((!ff.equals("") && !cc.equals(""))||(ff.equals("") && cc.equals(""))||(checkFI!=0 && checkFO!=0)){usage();}
        else {
     
        if      (!cc.equals("")) {
@@ -326,6 +344,8 @@ String ff="",ee="",cc="",ss="",ii="";
                 Object[] MethodArgs =  slapObject(cc,hilo,Exceed) ;
 				
 				int Justincase =0;
+				if (checkFO==1)
+				{
 				try {
 
 				for	(int checkIgnore=0;checkIgnore<im.length;checkIgnore++)
@@ -334,9 +354,24 @@ String ff="",ee="",cc="",ss="",ii="";
 				} 
 				}
 				catch(Exception e){}
+				}
+				
+				else if (checkFI==1)
+				{
+				try {
+
+				for	(int checkIgnore=0;checkIgnore<nim.length;checkIgnore++)
+				{
+					if (!allMethods[a].getName().equals(nim[checkIgnore])) {Justincase=1;} 
+				} 
+				}
+				catch(Exception e){}
+				}
+				
+				
 				
 				if (Justincase==1){ 
-				System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]: -=IGNORED=-\n");
+				if (checkFI==0) System.out.print("\nMethod -> \t"+allMethods[a].getName()+" ["+cls.getName()+"]: -=IGNORED=-\n");
 				}
 				
 				else {
@@ -345,6 +380,8 @@ String ff="",ee="",cc="",ss="",ii="";
                 System.out.print(" )\n");
                 help.BeefConstructor(cs,args,allMethods[a],tmpCLS,MethodArgs,v,oo);
 				}
+				
+				
 			
   }
   System.out.println("\n~~~~~~~~~~~~~~~~~~~~~");
@@ -546,7 +583,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
 				System.out.println("\n= =============================================== =");	
                 System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
 				System.out.println("= =============================================== =\n");
-               String output =
+               	String output =
                                 "\n"+"FLAGS"+
                                 "\n"+"-v: Verbose - Fully Print Exceptions"+
                                 "\n"+"-m: Fuzz methods of a Class, Can take Long time to finish"+
@@ -565,7 +602,10 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    Bruteforce's all possible positions for the constant (extra delay)"+
                                 "\n"+"-i: JavaFuzz will ignore the specified method(s) helpful when you found a bug "+
                                 "\n"+"    in a method but you want to dig deeper. (Seperate methods with commas)"+
-                                "\n"+"    e.g. for java.awt.Image you could use -i getGraphics,getScaledInstance  "+                               
+                                "\n"+"    e.g. for java.awt.Image you could use -i getGraphics,getScaledInstance  "+    
+                                "\n"+"-n: JavaFuzz will fuzz the specified method(s) only, for a given class"+    
+                                "\n"+"    e.g. for java.awt.Font you could use -n applySize,pDispose  "+  
+                                "\n"+"    NOTE: You cannot use -i at the same time"+                           
                                 "\n"+"-u: Fuzz only positive or negative values respectively e.g. Integer high is +MAX_VALUE"+
                                 "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
                                 "\n\n"+"EXAMPLES"+
@@ -574,6 +614,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"java -jar JavaFuzz.jar -f classes.txt -v -e int"+
                                 "\n"+"java -jar JavaFuzz.jar -c java.net.URL -e int -s http://www.example.com";
                System.out.println(output);
+			   System.exit(1);
 
     }
     
