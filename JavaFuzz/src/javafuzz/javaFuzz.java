@@ -203,7 +203,7 @@ String ff="",ee="",cc="",ss="",ii="";
           case 's':
            //String
             arg = g.getOptarg();
-            ss=arg;
+            try {ss=arg;} catch (Exception e){usage();System.exit(0);}
             Start=ss;
             break;
           case ':':
@@ -251,7 +251,8 @@ String ff="",ee="",cc="",ss="",ii="";
 
   { try{
     Exceed=1;
-    Class cls = Class.forName(className);
+    Class cls = null;
+   	try{ cls = Class.forName(className);}catch(Error e){}
     Constant = help.returnConsant(cls);
     if (help.returnConsant(cls)!=null) 
     {System.out.println("\nNOTE: This class takes Constant values. Try -o flag\n");}
@@ -342,7 +343,7 @@ String ff="",ee="",cc="",ss="",ii="";
 				Class[] cc = allMethods[a].getParameterTypes();
                 etternalLoop=0;
                 Object[] MethodArgs =  slapObject(cc,hilo,Exceed) ;
-				
+
 				int Justincase =0;
 				if (checkFO==1)
 				{
@@ -432,7 +433,7 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
     String stmin ="1";
     String stmax="";
     if (Start.equals("")){
-    stmax = BigString("1",StringSize);
+    stmax = BigString("%s",StringSize);
     stmax = Start+stmax;}
     else{stmax=Start;stmin=Start;}
     
@@ -612,7 +613,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
                                 "\n"+"java -jar JavaFuzz.jar -f classes.txt -v -e int"+
-                                "\n"+"java -jar JavaFuzz.jar -c java.net.URL -e int -s http://www.example.com";
+                                "\n"+"java -jar JavaFuzz.jar -c java.net.URL -e int -s http://www.example.com\n\n";
                System.out.println(output);
 			   System.exit(1);
 
