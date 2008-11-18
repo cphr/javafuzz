@@ -60,6 +60,8 @@ public class javaFuzz {
     public static int attackMethods =0;
     //Enumerate Constant's position
     public static int oo=0;
+	//Enforced Constant
+	public static Object pp = null;
     //Create Helper class
     public static Helper  help = new Helper();
     //MAX or MIN Values
@@ -75,7 +77,7 @@ public class javaFuzz {
         
 public static void main(String[] args) {
 String[] argv= args;
-Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:n:s:r:a:k:l:mou:");
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:n:p:s:r:a:k:l:mou:");
 int c;
 String arg;
 int vv=0,rr=0;
@@ -175,6 +177,26 @@ String ff="",ee="",cc="",ss="",ii="";
 				}
 			checkFI =1;
 			break;
+		 case 'p':
+            //Enforce constant
+            arg = g.getOptarg();
+           	String[] values = arg.split("=");
+
+            if (values.length!=2 ){usage();System.exit(0);}
+            else {
+            if (values[0].equals("int"))		{pp = (Object) Integer.parseInt(values[1]);}
+            else if (values[0].equals("float")) {pp = (Object) Float.parseFloat(values[1]);}
+            else if (values[0].equals("double")){pp = (Object) Double.parseDouble(values[1]);}
+            else if (values[0].equals("short")) {pp = (Object) Short.parseShort(values[1]);}
+            else if (values[0].equals("long"))  {pp = (Object) Long.parseLong(values[1]);}
+			else if (values[0].equals("string"))  {pp = (Object) values[1];}
+            else {usage();System.exit(0);}
+			}
+
+
+			oo=1;
+			if (pp==null){usage();System.exit(0);}
+            break;
           case 'e':
             //Extend
             arg = g.getOptarg();
@@ -253,8 +275,11 @@ String ff="",ee="",cc="",ss="",ii="";
     Exceed=1;
     Class cls = null;
    	try{ cls = Class.forName(className);}catch(Error e){}
-    Constant = help.returnConsant(cls);
-    if (help.returnConsant(cls)!=null) 
+
+	if (pp==null) {Constant = help.returnConsant(cls);}
+	else {Constant = pp;}
+
+    if (Constant!=null) 
     {System.out.println("\nNOTE: This class takes Constant values. Try -o flag\n");}
  
     Constructor[] a = cls.getConstructors();
@@ -275,14 +300,14 @@ String ff="",ee="",cc="",ss="",ii="";
        if (limit.equals("high") | limit.equals("") ){
        args =  slapObject(ff,1,Exceed) ;
        System.out.print("\n[MAX] Status -> \t");
-	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
+	   help.BeefConstructor(cons,args,Constant,v,oo);
        System.out.print("\n");
        }   
        //Low Values - No Methods
        if (limit.equals("low") | limit.equals("") ){
        args =  slapObject(ff,0,Exceed) ;
        System.out.print("[MIN] Status -> \t");
-	   help.BeefConstructor(cons,args,help.returnConsant(cls),v,oo);
+	   help.BeefConstructor(cons,args,Constant,v,oo);
        System.out.print("\n");	
        }
        //Method Attack
@@ -336,7 +361,9 @@ String ff="",ee="",cc="",ss="",ii="";
   Method[] allMethods = cls.getDeclaredMethods();
   String hilow;
   System.out.println("\n~~ Methods Fuzzing ~~");
+
   Object tmpCLS = help.returnConsant(cls);
+  if (pp!=null) {tmpCLS = pp;}
   
   for (int a=0;a<allMethods.length;a++)
   {             
@@ -507,7 +534,9 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 	    try { 
 		    Class clsa = Class.forName(current);
         	Object Constant1 = help.returnConsant(clsa);
-	        Constructor[] a = clsa.getConstructors();
+			if (pp!=null){Constant1=pp;}
+	        
+			Constructor[] a = clsa.getConstructors();
         	Object[] args ;
             int check=0;
         	for (int f=0;f<a.length;f++)   {
@@ -579,11 +608,12 @@ static void recursiveAttack(String FileName,int v) throws Exception {
             in.close();
          
 }
-
+	public  static String version = "0.7";
     private static void usage() {
 				System.out.println("\n= =============================================== =");	
                 System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
 				System.out.println("= =============================================== =\n");
+				System.out.println("= Version "+version+" =\n");
                	String output =
                                 "\n"+"FLAGS"+
                                 "\n"+"-v: Verbose - Fully Print Exceptions"+
@@ -609,6 +639,8 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    NOTE: You cannot use -i at the same time"+                           
                                 "\n"+"-u: Fuzz only positive or negative values respectively e.g. Integer high is +MAX_VALUE"+
                                 "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
+								"\n"+"-p: Enforce a Constant and bruteforce the position  "+
+								"\n"+"    type can be int,double,float,short,string   e.g. -p double=1 "+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
