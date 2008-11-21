@@ -437,7 +437,6 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
     int[] ai= new int[ArraySize];//{imax,imin};
     int[][] aii= new int[ArraySize][ArraySize];//{imax,imin};
     //Limits : long minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807
-    long lmax= Long.MAX_VALUE;;
     long[] al= new long[ArraySize];//{lmax,lmin};
     long[][] all= new long[ArraySize][ArraySize];
     //Limits : float  single-precision 32-bit IEEE 754 floating point
