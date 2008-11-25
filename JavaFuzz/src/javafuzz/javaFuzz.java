@@ -62,6 +62,7 @@ public class javaFuzz {
     public static int oo=0;
 	//Enforced Constant
 	public static Object pp = null;
+	public static Object ppcc = null;
     //Create Helper class
     public static Helper  help = new Helper();
     //MAX or MIN Values
@@ -77,7 +78,7 @@ public class javaFuzz {
         
 public static void main(String[] args) {
 String[] argv= args;
-Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:e:i:n:p:s:r:a:k:l:mou:");
+Getopt g = new Getopt("JavaFuzz", argv, ":vf:c:b:e:i:n:p:s:r:a:k:l:mou:");
 int c;
 String arg;
 int vv=0,rr=0;
@@ -202,6 +203,11 @@ String ff="",ee="",cc="",ss="",ii="";
             arg = g.getOptarg();
             ee=arg;
             break;
+		  case 'b':
+	        //Push a Class when there is interface
+	        arg = g.getOptarg();
+            try { ppcc = (Object)arg;} catch (Exception e){usage();System.exit(0);}
+            break;
           case 'r':
             //Recursions
             arg = g.getOptarg();
@@ -275,13 +281,15 @@ String ff="",ee="",cc="",ss="",ii="";
     Exceed=1;
     Class cls = null;
    	try{ cls = Class.forName(className);}catch(Error e){}
-
 	if (pp==null) {Constant = help.returnConsant(cls);}
 	else {Constant = pp;}
 
     if (Constant!=null) 
     {System.out.println("\nNOTE: This class takes Constant values. Try -o flag\n");}
- 
+	//Check if we have interface 
+    if (cls.isInterface())
+	{	System.out.println("* "+cls.getName()+" is Interface");	}
+
     Constructor[] a = cls.getConstructors();
     Object[] args ;
     System.out.println("--------------------------------------");  
@@ -289,6 +297,7 @@ String ff="",ee="",cc="",ss="",ii="";
        Class[] ff =  a[f].getParameterTypes();
        Class[] types =  ff ;
        System.out.print("Constructor -> \t"+a[f].getName()+"\nTypes -> \t(");
+
        for (int k=0;k<ff.length;k++)
        {System.out.print(" "+ff[k].getName());}
        System.out.print(" )\n");
@@ -532,7 +541,17 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
     
 	    try { 
 		    Class clsa = Class.forName(current);
+		  	if (clsa.isInterface() && ppcc==null)
+			{	
+				System.out.println("\n\n* "+clsa.getName()+" : Is Interface\n* If you know the Class implementing the interface, Try with -b full.class.name\n");	
+			}
+			else if(!clsa.isInterface() && ppcc!=null)
+			{
+				clsa = Class.forName(ppcc.toString());
+			}
+
         	Object Constant1 = help.returnConsant(clsa);
+		
 			if (pp!=null){Constant1=pp;}
 	        
 			Constructor[] a = clsa.getConstructors();
@@ -607,7 +626,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
             in.close();
          
 }
-	public  static String version = "0.7";
+	public  static String version = "0.7.2";
     private static void usage() {
 				System.out.println("\n= =============================================== =");	
                 System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
@@ -640,6 +659,8 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
 								"\n"+"-p: Enforce a Constant and bruteforce the position  "+
 								"\n"+"    type can be int,double,float,short,string   e.g. -p double=1 "+
+								"\n"+"-b: Use when a field in a constructor requires a class that implements an interface  "+
+								"\n"+"    e.g. for -c java.awt.image.FilteredImageSource then -b java.awt.image.MemoryImageSource "+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
