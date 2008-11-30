@@ -79,6 +79,8 @@ public class javaFuzz {
 	//Replace Class ArrayLists
 	public static ArrayList  findThisClass = new ArrayList();
     public static ArrayList  replaceItWithThisClass = new ArrayList();
+	//Collect all interfaces and Abstracts
+	public static String InterfacesAndAbstracts = "";
     
 public static void main(String[] args) {
 String[] argv= args;
@@ -268,13 +270,31 @@ String ff="",ee="",cc="",ss="",ii="";
     
        if      (!cc.equals("")) {
                 try {   summarize(cc,vv);
-                } catch (Exception ex) {
+		
+				if (vv==1&&(!InterfacesAndAbstracts.equals(""))) 
+						{
+						System.out.println("\n************************");
+						System.out.println("The following classes may not have been instantiated");
+						System.out.println("************************\n\nTry replacing classes with -g");
+						System.out.println(InterfacesAndAbstracts+"\n");
+						}
+        
+        		} catch (Exception ex) {
                   usage();
                   System.out.println("+Invalid Class");
                 }}
        else if (!ff.equals("")) {
                 try {   recursiveAttack(ff,vv);
-                } catch (Exception ex) {
+				
+				if (vv==1&&(!InterfacesAndAbstracts.equals(""))) 
+						{
+						System.out.println("\n************************");
+						System.out.println("The following classes may not have been instantiated");
+						System.out.println("************************\n\nTry replacing classes with -g");
+						System.out.println(InterfacesAndAbstracts+"\n");
+						}
+                
+				} catch (Exception ex) {
                   usage();
                   System.out.println("+Classes File ERROR");
                 }}
@@ -299,11 +319,16 @@ String ff="",ee="",cc="",ss="",ii="";
     {System.out.println("\nNOTE: This class takes Constant values. Try -o flag\n");}
 	//Check if we have interface 
     if (cls.isInterface())
-	{	System.out.println("\n* "+cls.getName()+" is an Interface");	}
+	{	
+		System.out.println("\n* "+cls.getName()+" is an Interface");	
+	
+
+	}
 	
 	if(Modifier.isAbstract(cls.getModifiers())) 
 	{
-		System.out.println("\n* "+cls.getName()+": Is an abstract\n");
+		System.out.println("\n* "+cls.getName()+": Is an Abstract\n");
+	
 	}
 	
 
@@ -574,11 +599,20 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 			
 		  	if (clsa.isInterface())
 			{	
-				System.out.println("\n\n* "+clsa.getName()+" : Is Interface\n* If you know the Class implementing the interface, Try with -g\n");	
+				//System.out.println("\n\n* "+clsa.getName()+" : Is Interface\n* If you know the Class implementing the interface, Try with -g\n");
+				
+				if(	InterfacesAndAbstracts.indexOf(clsa.getName()+" is an Interface")==-1)
+				{InterfacesAndAbstracts = InterfacesAndAbstracts+"\n* "+clsa.getName()+" is an Interface";	}
 			}
 		
 			
-			if(Modifier.isAbstract(clsa.getModifiers())) {System.out.println("\n* "+clsa.getName()+": Is abstract, try -g");}
+			if(Modifier.isAbstract(clsa.getModifiers())) 
+				{
+				
+				//System.out.println("\n* "+clsa.getName()+": Is abstract, try -g");
+				if(	InterfacesAndAbstracts.indexOf(clsa.getName()+" is an Abstract")==-1)
+				InterfacesAndAbstracts = InterfacesAndAbstracts+"\n* "+clsa.getName()+" is an Abstract";
+				}
 			
         	Object Constant1 = help.returnConsant(clsa);
 		
@@ -656,7 +690,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
             in.close();
          
 }
-	public  static String version = "0.7.3";
+	public  static String version = "0.7.4";
     private static void usage() {
 				System.out.println("\n= =============================================== =");	
                 System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
@@ -664,7 +698,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
 				System.out.println("= Version "+version+" =\n");
                	String output =
                                 "\n"+"FLAGS"+
-                                "\n"+"-v: Verbose - Fully Print Exceptions"+
+                                "\n"+"-v: Verbose - Fully Print Exceptions and other info"+
                                 "\n"+"-m: Fuzz methods of a Class, Can take Long time to finish"+
                                 "\n"+"-f: Read Class names from a file"+
                                 "\n"+"-c: Input is Class name, you cannot use -f at the same time"+
