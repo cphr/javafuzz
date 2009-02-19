@@ -73,14 +73,17 @@ public class javaFuzz {
     public static String[] nim;
 	//Check Filter-in and Filter-out
 	public static int checkFI=0;
-    public static int checkFO=0;
+    	public static int checkFO=0;
 	//Attack and Construct Abstracts 
 	public static int ANCA=0;
 	//Replace Class ArrayLists
 	public static ArrayList  findThisClass = new ArrayList();
-    public static ArrayList  replaceItWithThisClass = new ArrayList();
+    	public static ArrayList  replaceItWithThisClass = new ArrayList();
 	//Collect all interfaces and Abstracts
 	public static String InterfacesAndAbstracts = "";
+	//Auto Break
+	public static int AutoBreak = 0;
+
     
 public static void main(String[] args) {
 String[] argv= args;
@@ -212,14 +215,21 @@ String ff="",ee="",cc="",ss="",ii="";
 		  case 'g':
 	        //Attack and construct abstracts
 			arg = g.getOptarg();
+			if (arg.equals("a")) {AutoBreak=1;}
+			else {
 			String[] getReplacements = arg.split(",");
 			for (int findAllTypes=0;findAllTypes<getReplacements.length;findAllTypes++)
-			{
+			{	
 				String[] replacementValues = getReplacements[findAllTypes].split("=");
 				if (replacementValues.length!=2 ){usage();System.exit(0);}
+				else if((replacementValues.length==2) && (replacementValues[1].equals("{A}"))) {
+					try{
+					findThisClass.add(replacementValues[0]);
+					replaceItWithThisClass.add(findSubclass(replacementValues[0],"FindSubs.txt"));}
+					catch(Exception e){System.out.println(e);}}
 				else {findThisClass.add(replacementValues[0]);replaceItWithThisClass.add(replacementValues[1]);	}
 			}
-	        ANCA = 1;
+	        	ANCA = 1;}
             break;
           case 'r':
             //Recursions
@@ -242,7 +252,7 @@ String ff="",ee="",cc="",ss="",ii="";
             try {limit= arg;} catch (Exception e){usage();System.exit(0);}
             break;
           case 's':
-           //String
+            //String
             arg = g.getOptarg();
             try {ss=arg;} catch (Exception e){usage();System.exit(0);}
             Start=ss;
@@ -511,9 +521,9 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
     String stmin ="1";
     String stmax="";
     if (Start.equals("")){
-    stmax = BigString("%s",StringSize);
+    stmax = BigString("A",StringSize);
     stmax = Start+stmax;}
-    else{stmax=Start;stmin=Start;}
+    else{stmax=BigString(Start,StringSize);stmin=stmax;}
     
     String[] ast = new String[ArraySize];//{stmin,stmax};
     String[][] astt = new String[ArraySize][ArraySize];//{stmin,stmax};
@@ -597,9 +607,19 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 
 			}
 			
+			if (AutoBreak==1)
+			{
+			if (clsa.isInterface()||Modifier.isAbstract(clsa.getModifiers())) 
+			{      			
+				clsa = Class.forName(findSubclass(clsa.getName(),"FindSubs.txt"));
+
+
+
+			}
+			}
+
 		  	if (clsa.isInterface())
 			{	
-				//System.out.println("\n\n* "+clsa.getName()+" : Is Interface\n* If you know the Class implementing the interface, Try with -g\n");
 				
 				if(	InterfacesAndAbstracts.indexOf(clsa.getName()+" is an Interface")==-1)
 				{InterfacesAndAbstracts = InterfacesAndAbstracts+"\n* "+clsa.getName()+" is an Interface";	}
@@ -609,7 +629,6 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 			if(Modifier.isAbstract(clsa.getModifiers())) 
 				{
 				
-				//System.out.println("\n* "+clsa.getName()+": Is abstract, try -g");
 				if(	InterfacesAndAbstracts.indexOf(clsa.getName()+" is an Abstract")==-1)
 				InterfacesAndAbstracts = InterfacesAndAbstracts+"\n* "+clsa.getName()+" is an Abstract";
 				}
@@ -638,12 +657,16 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
                                 try   {list[k]=cons.newInstance(tmpr);System.out.print(":No Problem\n");check=1;break;}
                                 catch (Exception e){System.out.print(""+e.getCause());
                                 try   {list[k]=cons.newInstance(args);System.out.print(":No Problem\n");check=1;break;}
-                                catch (Exception ea){} 
+                                catch (Exception ea){
+						
+				} 
                                 }                    						   
                               }
 						}
 			
-					else { try    {list[k]=cons.newInstance();check=1;break;} catch  (Exception e){list[k]=null;break;} }       	
+					else { try    {list[k]=cons.newInstance();check=1;break;} 
+					catch  (Exception e){list[k]=null;break;}
+						}       	
         	    
 				if (check==1) {break;}
    				}
@@ -674,8 +697,37 @@ static String BigString (String str,int size){
 String tmp="";
 for (int a=0;a<size;a++){tmp=tmp+str;}
 return tmp; }
-   
-   
+
+
+public static String findSubclass(String Pclass, String FileName) throws Exception {
+            String subClass="",tryS="";                
+      	    InputStream fstream =(javaFuzz.class.getResourceAsStream(FileName)) ;
+  
+	    DataInputStream in = new DataInputStream(fstream);
+            while (in.available() !=0)
+		 { 
+		try 
+		{  
+		tryS = in.readLine();
+		Class Tester = Class.forName(tryS);
+		Class[] inter = Tester.getInterfaces();
+		for(int a=0;a<inter.length;a++) 
+		{
+		if ((inter[a].getName()).equals(Pclass)){return tryS;}
+		}
+
+
+		}
+		catch(Exception e){} 
+
+		 }
+
+
+
+            in.close();
+   return subClass;
+}
+ 
    
 
     
@@ -690,7 +742,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
             in.close();
          
 }
-	public  static String version = "0.7.4";
+	public  static String version = "0.7.5";
     private static void usage() {
 				System.out.println("\n= =============================================== =");	
                 System.out.println("= JavaFuzzer - Classes Fuzzing (Reflection Based) =");
@@ -698,11 +750,12 @@ static void recursiveAttack(String FileName,int v) throws Exception {
 				System.out.println("= Version "+version+" =\n");
                	String output =
                                 "\n"+"FLAGS"+
-                                "\n"+"-v: Verbose - Fully Print Exceptions and other info"+
+                                "\n"+"-v: Verbose - Fully Print Exceptions"+
                                 "\n"+"-m: Fuzz methods of a Class, Can take Long time to finish"+
                                 "\n"+"-f: Read Class names from a file"+
                                 "\n"+"-c: Input is Class name, you cannot use -f at the same time"+
                                 "\n"+"-s: You can set the fuzzing String, for example http://www.example.com"+
+								"\n"+"    if you dont want repeats, use it with -l1 "+
                                 "\n"+"-e: You can set the type you want to overflow with the MAX_VALUE on top "+
                                 "\n"+"    Values can be : int or double or float or long or short"+
                                 "\n"+"-r: Number of recursions until constructs the class [Default 20]"+
@@ -710,7 +763,7 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"-k: Set the value for int,float,long,short,double"+
                                 "\n"+"    e.g. -k int=100  or -k double=20000 or -k int=19,float=49 and so on."+                               
                                 "\n"+"-a: Set size of used array when fuzzing  [Default 800]" +
-                                "\n"+"-l: Set size of used String when fuzzing [Default 1024]"+
+                                "\n"+"-l: Set size of String when fuzzing [Default 1024], if -s is not defined A is default"+
                                 "\n"+"-o: Enumerate possible constructor's Constant parameters"+
                                 "\n"+"    Bruteforce's all possible positions for the constant (extra delay)"+
                                 "\n"+"-i: JavaFuzz will ignore the specified method(s) helpful when you found a bug "+
@@ -723,8 +776,10 @@ static void recursiveAttack(String FileName,int v) throws Exception {
                                 "\n"+"    and low value is -MAX_VALUE (or MIN_VALUE). -u low or -u high "+
 								"\n"+"-p: Enforce a Constant and bruteforce the position  "+
 								"\n"+"    type can be int,double,float,short,string   e.g. -p double=1 "+
-								"\n"+"-g: Use it when you want to replace a constructor, for example it could be used to replace"+
+								"\n"+"-g: Use it when you want to replace a class, for example it could be used to replace"+
 								"\n"+"    abstract classes or interfaces -g org.replace.this=org.with.this"+
+							    "\n"+"    the auto replacement mode can be invoked using -g org.replace.this={A}"+
+							    "\n"+"    and for complete automation use -ga "+
                                 "\n\n"+"EXAMPLES"+
                                 ""+""+
                                 "\n"+"java -jar JavaFuzz.jar -c java.lang.String -v"+
