@@ -38,16 +38,25 @@ public class javaFuzz {
     public static  short  ExceedShort =0;// Short.MAX_VALUE;
     public static  long   ExceedLong  =0;// Short.MAX_VALUE;
     //Set Values
-    static public  short smin = Short.MIN_VALUE;;
-    static public  short smax = Short.MAX_VALUE;;
-    static public  int   imin = Integer.MIN_VALUE;;
-    static public  int   imax = Integer.MAX_VALUE;;
-    static public  long  lmin = Long.MIN_VALUE;;
-    static public  long  lmax = Long.MAX_VALUE;;
-    static public  float fmin = Float.MIN_VALUE;;
-    static public  float fmax = Float.MIN_VALUE;;
-    static public  double dmin=Double.MIN_VALUE;;
-    static public  double dmax=Double.MAX_VALUE;;
+    static public  short smin = Short.MIN_VALUE;
+    static public  short smax = Short.MAX_VALUE;
+    static public  int   imin = Integer.MIN_VALUE;
+    static public  int   imax = Integer.MAX_VALUE;
+    static public  long  lmin = Long.MIN_VALUE;
+    static public  long  lmax = Long.MAX_VALUE;
+    static public  float fmin = Float.MIN_VALUE;
+    static public  float fmax = Float.MIN_VALUE;
+    static public  double dmin=Double.MIN_VALUE;
+    static public  double dmax=Double.MAX_VALUE;
+    static public  byte bmin;
+    static public  byte bmax;
+    static public  char cmin;
+    static public  char cmax;
+    static public  boolean bomin;
+    static public  boolean bomax;
+    static public  String stmin;
+    static public  String stmax;
+	
     public static int  etternalLoop=0;
     //Recursion 
     public static  int   Recursion  =23;// Default
@@ -73,16 +82,38 @@ public class javaFuzz {
     public static String[] nim;
 	//Check Filter-in and Filter-out
 	public static int checkFI=0;
-    	public static int checkFO=0;
+    public static int checkFO=0;
 	//Attack and Construct Abstracts 
 	public static int ANCA=0;
 	//Replace Class ArrayLists
 	public static ArrayList  findThisClass = new ArrayList();
-    	public static ArrayList  replaceItWithThisClass = new ArrayList();
+    public static ArrayList  replaceItWithThisClass = new ArrayList();
 	//Collect all interfaces and Abstracts
 	public static String InterfacesAndAbstracts = "";
 	//Auto Break
 	public static int AutoBreak = 0;
+	//String Global
+	public static String IamBigString="";
+	//Create Arrays
+	public static byte[] ab;
+	public static byte[][] abb;
+	public static short[] as;
+	public static short[][] ass;
+	public static int[] ai;
+	public static int[][] aii;
+	public static long[] al;
+	public static long[][] all;
+	public static float[] af;
+	public static float[][] aff;
+	public static double[] ad;
+	public static double[][] add;
+	public static boolean[] abo;
+	public static boolean[][] aboo;
+	public static char[] ac;
+	public static char[][] acc;
+	public static String[] ast ;
+	public static String[][] astt ;
+	
 
     
 public static void main(String[] args) {
@@ -269,6 +300,48 @@ String ff="",ee="",cc="",ss="",ii="";
             break;
        }
    }
+	     // Create Big String once
+		 if (Start.equals("")){ IamBigString = BigString("A",StringSize);}
+	     else{IamBigString=BigString(Start,StringSize);}
+			 //initialise variables
+			bmin = -128;
+			bmax = 127;
+			 //Limits : char '\u0000' to '\uffff' 
+			cmin='\u0000';
+			cmax='\uffff';
+			 //Limits : boolean true/false - this one doesnt make much sense but anyways
+			bomin=false;
+			bomax=true;
+			 //Limits : string 
+			stmin =IamBigString.substring(0,1);
+			stmax =IamBigString;;
+		     //Initialise Arrays
+			ab 	= new byte[ArraySize];//{bmax,bmin}
+			//Multi-dimensional arrays -- monkey business at the moment will do it more genericly soon
+			abb	= new byte[ArraySize][ArraySize];//{bmax,bmin}
+			//Limits : short -32,768 and a maximum value of 32,767
+			as  = new short[ArraySize];//{smax,smin}
+			ass = new short[ArraySize][ArraySize];//{smax,smin}
+			//Limits : int minimum value of -2,147,483,648 and a maximum value of 2,147,483,647 
+			ai  = new int[ArraySize];//{imax,imin}
+			aii = new int[ArraySize][ArraySize];//{imax,imin}
+			//Limits : long minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807
+			al  = new long[ArraySize]; //{lmax,lmin}
+			all = new long[ArraySize][ArraySize];
+			//Limits : float  single-precision 32-bit IEEE 754 floating point
+			af  = new float[ArraySize];//{fmax,fmin}
+			aff = new float[ArraySize][ArraySize];//{fmax,fmin}
+			//Limits : double double-precision 64-bit IEEE 754 floating point
+			ad  = new double[ArraySize];//{dmax,dmin}
+			add = new double[ArraySize][ArraySize];//{dmax,dmin}
+			abo = new boolean[ArraySize];//{bomax,bomin}
+			aboo= new boolean[ArraySize][ArraySize];//{bomax,bomin}
+			ac  = new char[ArraySize];//{cmax,cmin}
+			acc = new char[ArraySize][ArraySize];//{cmax,cmin}
+			ast = new String[ArraySize];//{stmin,stmax}
+			astt= new String[ArraySize][ArraySize];//{stmin,stmax}
+	
+	
          if     (ee.equals("int"))      { ExceedInt    = Integer.MAX_VALUE;}
          else if(ee.equals("double"))   { ExceedDouble = Double.MAX_VALUE; }
          else if(ee.equals("float"))    { ExceedFloat  = Float.MAX_VALUE;  }
@@ -487,47 +560,6 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
     Object[] list = new Object[cls.length];
      try{
     E=0;
-    byte bmin = -128;
-    byte bmax = 127;
-    byte[] ab= new byte[ArraySize];//{bmax,bmin};
-    //Multi-dimensional arrays -- monkey business at the moment will do it more genericly soon
-    byte[][] abb= new byte[ArraySize][ArraySize];//{bmax,bmin};
-    //Limits : short -32,768 and a maximum value of 32,767
-    short[] as= new short[ArraySize];//{smax,smin};
-    short[][] ass= new short[ArraySize][ArraySize];//{smax,smin};
-    //Limits : int minimum value of -2,147,483,648 and a maximum value of 2,147,483,647 
-    int[] ai= new int[ArraySize];//{imax,imin};
-    int[][] aii= new int[ArraySize][ArraySize];//{imax,imin};
-    //Limits : long minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807
-    long[] al= new long[ArraySize];//{lmax,lmin};
-    long[][] all= new long[ArraySize][ArraySize];
-    //Limits : float  single-precision 32-bit IEEE 754 floating point
-    float[] af= new float[ArraySize];//{fmax,fmin};
-    float[][] aff= new float[ArraySize][ArraySize];//{fmax,fmin};
-    //Limits : double double-precision 64-bit IEEE 754 floating point
-    double[] ad= new double[ArraySize];//{dmax,dmin};
-    double[][] add= new double[ArraySize][ArraySize];//{dmax,dmin};
-    //Limits : boolean true/false - this one doesnt make much sense but anyways
-    boolean bomin=false;
-    boolean bomax=true;
-    boolean[] abo= new boolean[ArraySize];//{bomax,bomin};
-    boolean[][] aboo= new boolean[ArraySize][ArraySize];//{bomax,bomin};
-    //Limits : char '\u0000' to '\uffff' 
-    char cmin='\u0000';
-    char cmax='\uffff';
-    char[] ac= new char[ArraySize];//{cmax,cmin};
-    char[][] acc= new char[ArraySize][ArraySize];//{cmax,cmin};
-    //Limits : string 
-    String stmin ="1";
-    String stmax="";
-    if (Start.equals("")){
-    stmax = BigString("A",StringSize);
-    stmax = Start+stmax;}
-    else{stmax=BigString(Start,StringSize);stmin=stmax;}
-    
-    String[] ast = new String[ArraySize];//{stmin,stmax};
-    String[][] astt = new String[ArraySize][ArraySize];//{stmin,stmax};
-    
     for (int k=0;k<cls.length;k++){
     String current = cls[k].getName();     
     boolean max=false;
@@ -612,9 +644,6 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 			if (clsa.isInterface()||Modifier.isAbstract(clsa.getModifiers())) 
 			{      			
 				clsa = Class.forName(findSubclass(clsa.getName(),"FindSubs.txt"));
-
-
-
 			}
 			}
 
