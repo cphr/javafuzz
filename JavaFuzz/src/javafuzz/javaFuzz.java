@@ -557,7 +557,7 @@ String ff="",ee="",cc="",ss="",ii="";
 
 public static Object[] slapObject (Class[] cls,int hilow,int E) {
     etternalLoop++;;        
-    Object[] list = new Object[cls.length];
+    Object[] list = new Object[cls.length];String ArrayOfOtherStuff ="";
      try{
     E=0;
     for (int k=0;k<cls.length;k++){
@@ -621,10 +621,12 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
    }
     else if (current.equals("[Ljava/lang/String")){list[k]=ast;}
     else if (current.equals("[[Ljava/lang/String")){list[k]=astt;}
+	else if (current.indexOf("[L")!=-1 && current.indexOf(";")!=-1) 
+		    {list[k] = Array.newInstance(Class.forName(current.substring(2,current.length()-1)), ArraySize);}
     //Construct - Uknown Object
     else {
-    
-	    try { 
+	
+	    try {
 		    Class clsa = Class.forName(current);
 			
 			//Replace abstract with a constructor that can implement it
@@ -742,7 +744,10 @@ public static String findSubclass(String Pclass, String FileName) throws Excepti
 		Class[] inter = Tester.getInterfaces();
 		for(int a=0;a<inter.length;a++) 
 		{
-		if ((inter[a].getName()).equals(Pclass)){return tryS;}
+		if ((inter[a].getName()).equals(Pclass))
+		{
+			if (!Modifier.isAbstract(Tester.getModifiers())) {return tryS;}
+		}
 		}
 
 
