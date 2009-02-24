@@ -256,7 +256,12 @@ String ff="",ee="",cc="",ss="",ii="";
 				else if((replacementValues.length==2) && (replacementValues[1].equals("{A}"))) {
 					try{
 					findThisClass.add(replacementValues[0]);
-					replaceItWithThisClass.add(findSubclass(replacementValues[0],"FindSubs.txt"));}
+					if (Class.forName(replacementValues[0]).isInterface())
+					replaceItWithThisClass.add(findSubclass(replacementValues[0],"FindSubs.txt"));
+					else if (Modifier.isAbstract((Class.forName(replacementValues[0])).getModifiers()))
+					replaceItWithThisClass.add(findSubclass(replacementValues[0],"FindSubs.txt"));					
+					
+						}
 					catch(Exception e){System.out.println(e);}}
 				else {findThisClass.add(replacementValues[0]);replaceItWithThisClass.add(replacementValues[1]);	}
 			}
@@ -643,9 +648,13 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
 			
 			if (AutoBreak==1)
 			{
-			if (clsa.isInterface()||Modifier.isAbstract(clsa.getModifiers())) 
+			if (clsa.isInterface()) 
 			{      			
 				clsa = Class.forName(findSubclass(clsa.getName(),"FindSubs.txt"));
+			}
+			if (Modifier.isAbstract(clsa.getModifiers())) 
+			{			
+			    clsa = Class.forName(findSupers(clsa.getName(),"FindSubs.txt"));
 			}
 			}
 
@@ -683,6 +692,7 @@ public static Object[] slapObject (Class[] cls,int hilow,int E) {
                           for (int p=0;p<args.length;p++) {tmpr[p]=args[p];}
                                 //Show Submitted Values
                                 System.out.print("\nSubmit Values - Sub-constructor ("+clsa.getName()+"):\n\t ");
+								if (h>0) {tmpr[h-1] = pp;}
                                 for (int display=0;display<args.length;display++)
                                 {System.out.print(tmpr[display]+" ");}                    
                                 try   {list[k]=cons.newInstance(tmpr);System.out.print(":No Problem\n");check=1;break;}
@@ -730,13 +740,12 @@ for (int a=0;a<size;a++){tmp=tmp+str;}
 return tmp; }
 
 
-public static String findSubclass(String Pclass, String FileName) throws Exception {
+public static String findSubclass(String Pclass, String FileName)  {
             String subClass="",tryS="";                
-      	    InputStream fstream =(javaFuzz.class.getResourceAsStream(FileName)) ;
-  
-	    DataInputStream in = new DataInputStream(fstream);
-            while (in.available() !=0)
-		 { 
+      	    try {
+			InputStream fstream =(javaFuzz.class.getResourceAsStream(FileName)) ;
+	    	DataInputStream in = new DataInputStream(fstream);
+            while (in.available() !=0){ 
 		try 
 		{  
 		tryS = in.readLine();
@@ -755,12 +764,37 @@ public static String findSubclass(String Pclass, String FileName) throws Excepti
 		catch(Exception e){} 
 
 		 }
-
-
-
             in.close();
-   return subClass;
+			} catch (Exception e) {}
+ return subClass;
 }
+		
+public static String findSupers(String Pclass, String FileName)  {
+		           String subClass="",tryS="";
+			    try {
+		     	    InputStream fstream =(javaFuzz.class.getResourceAsStream(FileName)) ;
+			    	DataInputStream in = new DataInputStream(fstream);
+		           while (in.available() !=0)
+				 	{
+							try
+							{
+							tryS = in.readLine();
+							Class Tester = Class.forName(tryS);
+							Class inter = Tester.getSuperclass();
+
+								if ((inter.getName()).equals(Pclass))
+								{
+									if (!Modifier.isAbstract(Tester.getModifiers()) && !Tester.isInterface()) {return tryS;}
+								}
+								}
+				catch(Exception e){}
+				 }
+		           
+					in.close();
+				} catch (Exception e) {}
+ 	return subClass;
+}
+
  
    
 
